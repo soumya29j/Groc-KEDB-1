@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KEDB - SAP STO & IDoc Issues</title>
+<style>
+body{font-family:Arial,Helvetica,sans-serif;margin:20px;line-height:1.6;color:#222}
+h1,h2{color:#0b5394}
+.section{border:1px solid #ccc;padding:15px;margin:15px 0;border-radius:8px}
+table{border-collapse:collapse;width:100%;margin-top:10px}
+th,td{border:1px solid #999;padding:8px;text-align:left}
+th{background:#e8f0fe}
+.code{background:#f4f4f4;padding:4px 8px;border-radius:4px}
+</style>
+</head>
+<body>
+<h1>KEDB (Known Error Database)</h1>
+<p><b>Module:</b> SAP STO / IDoc Integration<br>
+<b>Environment:</b> Production<br>
+<b>Site:</b> SP9K</p>
+
+<div class="section">
+<h2>KEDB-01: Article is not the same for confirmation and delivery</h2>
+<table>
+<tr><th>Field</th><th>Details</th></tr>
+<tr><td>Error</td><td>Article is not the same for confirmation and delivery</td></tr>
+<tr><td>IDoc</td><td>0000000485232182</td></tr>
+<tr><td>Message Type</td><td>SHP_OBDLV_CREATE_STO</td></tr>
+<tr><td>Site</td><td>SP9K</td></tr>
+</table>
+
+<h3>Observation</h3>
+<p>Delivery creation IDoc 0000000485232181 was processed successfully (Status 53). The payload contained both consumable and non-consumable articles and generated the message:
+<span class="code">You cannot create several delivery headers in case of external number assignment</span>.</p>
+
+<h3>Root Cause</h3>
+<p>SAP requires separate deliveries for consumable and non-consumable articles. Since both article types were transmitted in a single payload, SAP created the delivery only for the non-consumable article. During PGI confirmation, the system received confirmation data for an article that was not available in the delivery, resulting in the error.</p>
+
+<h3>Resolution</h3>
+<ul>
+<li>Maintain Route ID in the consumable STO.</li>
+<li>Delete the existing delivery from Shipsy.</li>
+<li>Re-push the request from Shipsy.</li>
+<li>Verify successful delivery creation in SAP.</li>
+</ul>
+
+<h3>Conclusion</h3>
+<p>The issue occurred because consumable and non-consumable articles were sent together in a single payload. Maintaining Route ID and recreating the delivery resolves the issue.</p>
+</div>
+
+<div class="section">
+<h2>KEDB-02: Order item already delivered or not delivery relevant</h2>
+<table>
+<tr><th>Field</th><th>Details</th></tr>
+<tr><td>Error</td><td>Order item 4780573570 / 000003 already delivered or not delivery relevant</td></tr>
+<tr><td>IDoc</td><td>0000000485099425</td></tr>
+<tr><td>Message Type</td><td>SHP_OBDLV_CREATE_STO</td></tr>
+<tr><td>Site</td><td>SP9K</td></tr>
+</table>
+
+<h3>Root Cause</h3>
+<p>The Delivery Completion Indicator was automatically set for STO line item 000003 on 31.05.2026 through process <span class="code">OPS_PO_CLS</span>. SAP therefore considered the item completed and prevented delivery creation.</p>
+
+<h3>Resolution</h3>
+<ul>
+<li>Remove the Delivery Completion Indicator from the STO line item.</li>
+<li>Wait for the standard reprocessing cycle (~30 minutes).</li>
+<li>Reprocess the IDoc.</li>
+<li>Validate successful delivery creation.</li>
+</ul>
+
+<h3>Conclusion</h3>
+<p>The issue was caused by the Delivery Completion Indicator being set on the STO item. Removing the indicator resolved the problem.</p>
+</div>
+
+<div class="section">
+<h2>KEDB-03: Deficit of Delivered Block Stock Quantity</h2>
+<table>
+<tr><th>Field</th><th>Details</th></tr>
+<tr><td>Error</td><td>Deficit of Delivered blStck qty 2 CAR : 494354706 SP9K</td></tr>
+<tr><td>Failed IDoc</td><td>0000000485476123</td></tr>
+<tr><td>Successful IDoc</td><td>0000000485596581</td></tr>
+</table>
+
+<h3>Issue Details</h3>
+<p>The document posting IDoc failed because mandatory fields were not populated in the incoming payload.</p>
+
+<h3>Missing Fields</h3>
+<ul>
+<li>Header Text</li>
+<li>REF_DOC_YR</li>
+<li>REF_DOC_IT</li>
+</ul>
+
+<h3>Root Cause</h3>
+<p>The initial IDoc was received without the mandatory reference fields. SAP validation failed during processing. When the same transaction was resent with the required values populated, the document posted successfully.</p>
+
+<h3>Resolution</h3>
+<ul>
+<li>Verify that Header Text, REF_DOC_YR and REF_DOC_IT are populated before transmission.</li>
+<li>Resend the transaction with complete data.</li>
+<li>Monitor successful IDoc processing.</li>
+</ul>
+
+<h3>Conclusion</h3>
+<p>Missing mandatory reference fields caused the posting failure. Resending the payload with complete information resolves the issue.</p>
+</div>
+
+<div class="section">
+<h2>KEDB-04: Delivered Block Stock Quantity Exceeded</h2>
+<table>
+<tr><th>Field</th><th>Details</th></tr>
+<tr><td>Error</td><td>Delivered blStck qty exceeded by 9 C04 : 491161238 SP9K 3020</td></tr>
+<tr><td>Failed IDoc</td><td>0000000485596610</td></tr>
+<tr><td>Successful IDoc</td><td>0000000485509943</td></tr>
+</table>
+
+<h3>Observation</h3>
+<p>Movement 105 had already been posted against movement 103. A duplicate re-push from Shipsy triggered another IDoc, resulting in the quantity exceeded error.</p>
+
+<h3>Root Cause</h3>
+<p>The original transaction was already processed successfully in SAP. A subsequent duplicate re-push attempted to post the same stock movement again, causing SAP quantity validation to fail.</p>
+
+<h3>Resolution</h3>
+<ul>
+<li>Do not reprocess these IDocs if the original posting was successful.</li>
+<li>Validate document status before re-pushing transactions.</li>
+<li>Raise the issue with Shipsy to identify the reason for duplicate re-push requests.</li>
+</ul>
+
+<h3>Conclusion</h3>
+<p>This is a duplicate processing scenario. No SAP correction is required if the original document has already been posted successfully.</p>
+</div>
+
+</body>
+</html>
