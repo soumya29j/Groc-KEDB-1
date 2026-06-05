@@ -94,7 +94,7 @@ th{background:#e8f0fe}
 </ul>
 
 <h3>Root Cause</h3>
-<p>The initial IDoc was received without the mandatory reference fields. SAP validation failed during processing. When the same transaction was resent with the required values populated, the document posted successfully.</p>
+<p>The initial IDoc was received without the mandatory reference fields.When the same transaction was resent with the required values populated, the document posted successfully.</p>
 
 <h3>Resolution</h3>
 <ul>
@@ -124,8 +124,6 @@ th{background:#e8f0fe}
 
 <h3>Resolution</h3>
 <ul>
-<li>Do not reprocess these IDocs if the original posting was successful.</li>
-<li>Validate document status before re-pushing transactions.</li>
 <li>Raise the issue with Shipsy to identify the reason for duplicate re-push requests.</li>
 </ul>
 
