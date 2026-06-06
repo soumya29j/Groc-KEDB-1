@@ -9,16 +9,39 @@
 <style>
 body{
 font-family:Segoe UI,Arial,sans-serif;
-background:#f4f6f9;
+background:
+linear-gradient(
+rgba(244,246,249,0.92),
+rgba(244,246,249,0.92)
+),
+url('SAP BANNER.jpg');
+
+background-size:cover;
+background-position:center;
+background-attachment:fixed;
 margin:0;
 padding:0;
 }
 
 .header{
-background:#003366;
+background:linear-gradient(
+90deg,
+#003366,
+#005792
+);
 color:white;
-padding:20px;
+padding:25px;
 text-align:center;
+box-shadow:0 4px 12px rgba(0,0,0,0.2);
+}
+
+.hero-banner{
+height:320px;
+background-image:url('sap-banner.jpg');
+background-size:cover;
+background-position:center;
+background-repeat:no-repeat;
+box-shadow:0 4px 10px rgba(0,0,0,0.3);
 }
 
 .container{
@@ -47,6 +70,12 @@ border-radius:8px;
 box-shadow:0 2px 5px rgba(0,0,0,0.1);
 margin-bottom:15px;
 overflow:hidden;
+transition:0.3s;
+}
+
+.kedb-card:hover{
+transform:translateY(-3px);
+box-shadow:0 8px 18px rgba(0,0,0,0.15);
 }
 
 .kedb-header{
@@ -99,6 +128,8 @@ box-shadow:0 2px 5px rgba(0,0,0,0.1);
 </head>
 
 <body>
+
+<div class="hero-banner"></div>
 
 <div class="header">
 <h1>SAP SUPPORT KEDB PORTAL</h1>
